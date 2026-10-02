@@ -4,6 +4,7 @@ runtime/
 # 构建产物与依赖(可重建)
 aki-mac-launcher/node_modules/
 aki-mac-launcher/src-tauri/target/
+aki-mac-launcher/releases/
 aki-mac-launcher/dist/
 # 本机私有内容(会话记录/日志/迁移说明,含个人路径)
 session-records/

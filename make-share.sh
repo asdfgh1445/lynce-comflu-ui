@@ -17,9 +17,10 @@ rsync -a \
   --exclude .DS_Store \
   aki-mac-launcher/ "$STAGE/aki-mac-launcher/"
 
-# v0.2 安装包单放一份(target 整体被排除,否则接收者拿不到 dmg)
+# v0.2 安装包(releases/ 为常驻保存位置;若刚构建过 target 里也有,优先取新的)
 mkdir -p "$STAGE/aki-mac-launcher/release"
-cp aki-mac-launcher/src-tauri/target/release/bundle/dmg/*.dmg "$STAGE/aki-mac-launcher/release/" 2>/dev/null || true
+cp aki-mac-launcher/releases/*.dmg "$STAGE/aki-mac-launcher/release/" 2>/dev/null || \
+  cp aki-mac-launcher/src-tauri/target/release/bundle/dmg/*.dmg "$STAGE/aki-mac-launcher/release/" 2>/dev/null || true
 
 # 网页界面母本
 rsync -a --exclude .DS_Store liblib-ui/ "$STAGE/liblib-ui/"
