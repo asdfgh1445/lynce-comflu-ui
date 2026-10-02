@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图片创作 · Lynce AI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --bg: #f6f7fa; --card: #ffffff; --line: #e8eaf0; --text: #1c1f26; --muted: #9aa0ad;
+    --brand: #4f5bff; --brand-grad: linear-gradient(135deg, #4f5bff, #7b4dff); }
+  body { min-height: 100vh; background: var(--bg); color: var(--text); font: 14px/1.6 -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif; display: flex; flex-direction: column; align-items: center; padding: 34px 20px 60px; }
+  .title { font-size: 30px; font-weight: 700; margin-bottom: 10px; }
+  .subtitle { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; margin-bottom: 30px; }
+  .subtitle .ic { display: inline-flex; width: 18px; height: 18px; border-radius: 5px; }
+  .composer { width: min(760px, 94vw); background: var(--card); border-radius: 16px; box-shadow: 0 10px 40px rgba(30,35,60,.10); padding: 14px 16px 12px; }
+  .ctabs { display: flex; gap: 8px; margin-bottom: 10px; }
+  .ctab { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 9px; font-size: 13px; color: #555c6b; cursor: default; }
+  .ctab svg { width: 15px; height: 15px; }
+  .ctab.on { background: #eef0ff; color: var(--brand); font-weight: 600; }
+  #prompt { width: 100%; border: none; outline: none; resize: vertical; min-height: 58px; font: 14px/1.6 inherit; color: var(--text); }
+  #prompt::placeholder { color: #b6bcc9; }
+  .tools { display: flex; align-items: center; gap: 10px; margin: 10px 0 12px; flex-wrap: wrap; }
+  .tbtn { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 10px; border: 1px solid var(--line); cursor: pointer; font-size: 11px; color: #555c6b; background: #fff; gap: 3px; }
+  .tbtn svg { width: 17px; height: 17px; }
+  .tbtn.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .tbtn.on .sm, .tbtn.on .plus { color: #fff; }
+  .tbtn .sm { font-size: 10px; color: #8a90a0; }
+  .addimg { position: relative; overflow: hidden; }
+  .addimg .plus { font-size: 17px; color: #8a90a0; }
+  .addimg input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  #initPrev { max-width: 52px; max-height: 52px; border-radius: 8px; display: none; }
+  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .mchip, .rchip { display: flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 10px; padding: 7px 12px; font-size: 13px; cursor: pointer; position: relative; }
+  .mchip svg, .rchip svg { width: 14px; height: 14px; color: #555c6b; }
+  .rchip .sep { color: #c9cedb; }
+  .mchip .list, .rchip .pop { display: none; position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgba(30,35,60,.14); padding: 6px; z-index: 20; }
+  .mchip .list.open, .rchip .pop.open { display: block; }
+  .mchip .list div, .rchip .pop div { padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap; }
+  .mchip .list div:hover, .rchip .pop div:hover { background: #f2f3f9; }
+  .submit { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  #genBtn { border: none; background: var(--brand-grad); color: #fff; width: 44px; height: 38px; border-radius: 22px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  #genBtn:disabled { opacity: .55; cursor: wait; }
+  #genBtn svg { width: 17px; height: 17px; }
+  #localTag { font-size: 11px; color: var(--muted); }
+  .prog { display: none; margin-top: 10px; }
+  .prog .bg { height: 5px; border-radius: 3px; background: #edeff5; overflow: hidden; }
+  .prog .bar { height: 100%; width: 0%; background: var(--brand-grad); border-radius: 3px; transition: width .4s; }
+  .prog .txt { font-size: 11px; color: var(--muted); margin-top: 5px; text-align: center; }
+  .secT { width: min(760px, 94vw); display: flex; align-items: center; justify-content: space-between; margin: 34px 0 12px; }
+  .secT .t { font-size: 15px; font-weight: 700; }
+  .secT .more { font-size: 12px; color: var(--muted); }
+  #gallery { width: min(760px, 94vw); display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; }
+  #gallery .card { flex: none; width: 150px; height: 190px; border-radius: 12px; overflow: hidden; position: relative; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  #gallery .card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #gallery .card .tag { position: absolute; top: 6px; left: 6px; font-size: 10px; background: rgba(0,0,0,.55); color: #fff; border-radius: 5px; padding: 1px 6px; }
+  #gallery .empty { color: #b6bcc9; font-size: 12px; }
+  #lightbox { display: none; position: fixed; inset: 0; background: rgba(10,12,18,.82); z-index: 50; align-items: center; justify-content: center; cursor: zoom-out; }
+  #lightbox img { max-width: 92vw; max-height: 92vh; border-radius: 10px; }
+  .i2isetting { display: none; align-items: center; gap: 8px; margin: 8px 0; font-size: 12px; color: #555c6b; }
+  .i2isetting.show { display: flex; }
+  .i2isetting input { flex: 1; max-width: 200px; accent-color: var(--brand); }
+  #toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:rgba(20,20,20,.92);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;z-index:9999;display:none;box-shadow:0 8px 30px rgba(0,0,0,.4);max-width:80vw;text-align:center}
+</style>
+</head>
+<body>
+  <div class="title">图片创作</div>
+  <div class="subtitle">
+    <span class="ic" style="background:linear-gradient(135deg,#a18cd1,#fbc2eb)"></span>
+    <span class="ic" style="background:linear-gradient(135deg,#84fab0,#8fd3f4)"></span>
+    <span class="ic" style="background:linear-gradient(135deg,#fccb90,#d57eeb)"></span>
+    <span class="ic" style="background:linear-gradient(135deg,#e0c3fc,#8ec5fc)"></span>
+    Lynce AI · 本地引擎
+  </div>
+
+  <div class="composer">
+    <div class="ctabs">
+      <div class="ctab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>图片生成</div>
+    </div>
+    <textarea id="prompt" placeholder="描述你想生成的画面，例如：portrait photo of a young asian woman, soft studio light"></textarea>
+    <div class="tools">
+      <div class="tbtn on" id="styleBtn" title="当前模型">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18"/><path d="M12 7v10"/></svg>
+        <span class="sm" id="modelShort">majicFLUS</span>
+      </div>
+      <div class="tbtn addimg" id="addImgBtn" title="上传底图启用图生图">
+        <span class="plus">+</span>
+        <span class="sm">添加图片</span>
+        <input type="file" id="initFile" accept="image/png,image/jpeg,image/webp">
+      </div>
+      <img id="initPrev" alt="">
+    </div>
+    <div class="i2isetting" id="i2iRow">重绘幅度 <input type="range" id="creativity" min="0.2" max="0.95" step="0.05" value="0.75"> <span id="creativityV">0.75</span></div>
+    <div class="row">
+      <div class="mchip" id="modelChip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m7 12 3 3 7-7"/></svg>
+        <span id="modelName">majicFLUS_v10_Q4_KS</span>
+        <div class="list" id="modelList"></div>
+      </div>
+      <div class="rchip" id="ratioChip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+        <span id="ratioText">1:1 · 1张</span><span class="sep">▾</span>
+        <div class="pop" id="ratioPop"></div>
+      </div>
+      <div class="submit">
+        <span id="localTag">本地生成</span>
+        <button id="genBtn" title="生成"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+      </div>
+    </div>
+    <div class="prog" id="prog"><div class="bg"><div class="bar" id="progBar"></div></div><div class="txt" id="progTxt"></div></div>
+  </div>
+
+  <div class="secT"><span class="t">本地图库</span><span class="more">生成的图片自动保存在这里</span></div>
+  <div id="gallery"><span class="empty" style="color:#b6bcc9;font-size:12px">暂无生成记录，输入提示词点击上方按钮试试</span></div>
+  <div id="lightbox"><img id="lightboxImg" alt=""><a id="lbDl" href="#" download style="position:absolute;top:20px;right:24px;background:#fff;color:#1c1f26;border-radius:8px;padding:8px 16px;font-size:13px;text-decoration:none">下载 ⬇</a></div>
+
+<script>
+const API = location.origin;
+let SID = null, busy = false, initImage = null, W = 1024, H = 1024, N = 1;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+async function api(path, payload, timeoutMs) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), timeoutMs || 30000);
+  try {
+    const r = await fetch(API + "/API/" + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload || {}), signal: ctl.signal });
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+
+async function init() {
+  try {
+    const s = await api("GetNewSession", {}); SID = s.session_id;
+    const r = await api("ListModels", { session_id: SID, subtype: "Stable-Diffusion", path: "", depth: 3, sortBy: "Name" });
+    const files = (r.files || []).filter(f => !f.is_folder && !f.name.includes("/"));
+    const list = $("modelList"); list.innerHTML = "";
+    window._models = files.map(f => f.name);
+    files.forEach((f, i) => {
+      const d = document.createElement("div");
+      d.textContent = f.name;
+      d.onclick = () => { $("modelName").textContent = f.name; window._selModel = f.name; list.classList.remove("open"); };
+      list.appendChild(d);
+      if (i === 0) { window._selModel = f.name; $("modelName").textContent = f.name; }
+    });
+    loadHistory();
+  } catch (e) { $("modelName").textContent = "引擎未启动"; }
+}
+
+const RATIOS = [
+  { label: "1:1 · 1张", w: 1024, h: 1024, n: 1 }, { label: "1:1 · 4张", w: 1024, h: 1024, n: 4 },
+  { label: "3:4 · 4张", w: 896, h: 1152, n: 4 }, { label: "4:3 · 4张", w: 1152, h: 896, n: 4 },
+  { label: "9:16 · 1张", w: 768, h: 1344, n: 1 }, { label: "16:9 · 1张", w: 1344, h: 768, n: 1 },
+];
+(function initRatios() {
+  const pop = $("ratioPop");
+  RATIOS.forEach(rt => {
+    const d = document.createElement("div"); d.textContent = rt.label;
+    d.onclick = () => { W = rt.w; H = rt.h; N = rt.n; $("ratioText").textContent = rt.label; pop.classList.remove("open"); };
+    pop.appendChild(d);
+  });
+})();
+$("modelChip").onclick = e => { $("modelList").classList.toggle("open"); e.stopPropagation(); };
+$("ratioChip").onclick = e => { $("ratioPop").classList.toggle("open"); e.stopPropagation(); };
+document.addEventListener("click", () => { $("modelList").classList.remove("open"); $("ratioPop").classList.remove("open"); });
+$("modelChip").addEventListener("click", e => e.stopPropagation());
+$("ratioChip").addEventListener("click", e => e.stopPropagation());
+
+$("initFile").onchange = e => {
+  const file = e.target.files[0]; if (!file) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    initImage = rd.result;
+    $("initPrev").src = initImage; $("initPrev").style.display = "block";
+    $("i2iRow").classList.add("show");
+    $("addImgBtn").classList.add("on");
+  };
+  rd.readAsDataURL(file);
+};
+$("creativity").oninput = e => $("creativityV").textContent = parseFloat(e.target.value).toFixed(2);
+
+function addThumb(url) {
+  const em = $("gallery").querySelector(".empty"); if (em) em.remove();
+  const card = document.createElement("div"); card.className = "card";
+  const img = document.createElement("img"); img.src = url;
+  const tag = document.createElement("div"); tag.className = "tag"; tag.textContent = "刚生成";
+  card.appendChild(img); card.appendChild(tag);
+  card.onclick = () => { $("lightboxImg").src = url; $("lbDl").href = url; $("lightbox").style.display = "flex"; };
+  $("gallery").prepend(card);
+}
+$("lightbox").onclick = () => $("lightbox").style.display = "none";
+
+function collect() {
+  const p = {
+    session_id: SID, prompt: $("prompt").value.trim(), model: window._selModel,
+    images: N, steps: 16, cfgscale: 1.0, width: W, height: H,
+  };
+  const neg = "ng_deepnegative_v1_75t,(badhandv4:1.2),EasyNegative,(worst quality:2),";
+  p.negativeprompt = neg;
+  if (initImage) { p.initimage = initImage; p.initimagecreativity = parseFloat($("creativity").value); }
+  return p;
+}
+function showProgress(pct, text) { $("prog").style.display = "block"; $("progBar").style.width = Math.round(pct * 100) + "%"; $("progTxt").textContent = text; }
+function hideProgress() { $("prog").style.display = "none"; $("progBar").style.width = "0%"; }
+
+async function generate() {
+  if (busy) return;
+  const p = collect();
+  if (!p.prompt && !p.initimage) { $("prompt").focus(); $("prompt").placeholder = "请先输入提示词！"; return; }
+  busy = true; $("genBtn").disabled = true;
+  showProgress(0.03, "提交任务…");
+  let done = false, got = 0;
+  const finish = ok => { if (done) return; done = true; busy = false; $("genBtn").disabled = false; hideProgress(); };
+  let ws = null, opened = false;
+  try { ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/API/GenerateText2ImageWS"); } catch {}
+  if (ws) {
+    ws.onopen = () => { opened = true; ws.send(JSON.stringify(p)); };
+    ws.onmessage = ev => {
+      let m; try { m = JSON.parse(ev.data); } catch { return; }
+      if (m.gen_progress) {
+        const pct = m.gen_progress.overall_percent || 0;
+        showProgress(Math.max(pct, 0.05), (pct < 0.12 && !m.gen_progress.preview) ? "加载模型中…" : "生成中 " + Math.round(pct * 100) + "%");
+      } else if (m.status) {
+        if (m.status.loading_models > 0) showProgress(0.05, "加载模型中…");
+        else if (m.status.live_gens > 0) showProgress(0.35, "采样中…");
+        else if (m.status.waiting_gens > 0) showProgress(0.02, "排队中…");
+      } else if (m.image && m.image.image) {
+        got++;
+        showProgress(0.96, `完成 ${got}/${p.images}`);
+        showImage(m.image.image.startsWith("data:") ? m.image.image : API + "/" + m.image.image);
+      } else if (m.images) {
+        (m.images || []).forEach(im => showImage(im.image.startsWith("data:") ? im.image : API + "/" + im.image));
+        finish(true); try { ws.close(); } catch {}
+      }
+    };
+    ws.onerror = () => { if (!opened) httpFallback(p, finish); };
+    ws.onclose = () => { if (!done && got > 0) finish(true); else if (!done) httpFallback(p, finish); };
+  } else httpFallback(p, finish);
+  async function httpFallback(pp, fin) {
+    if (done) return;
+    try {
+      const r = await api("GenerateText2Image", pp, 900000);
+      (r.images || []).forEach(im => showImage(im.image.startsWith("data:") ? im.image : API + "/" + im.image));
+      fin(true);
+    } catch (e) { alert("生成失败：" + (e.message || e)); fin(false); }
+  }
+}
+$("genBtn").onclick = generate;
+$("prompt").addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") generate(); });
+
+async function loadHistory() {
+  try {
+    const r = await api("ListImages", { session_id: SID, path: "", offset: 0, depth: 3, count: 8 });
+    (r.files || []).forEach(f => {
+      const src = f.src || "";
+      if (src) addThumb(API + "/View/local/" + src.split("/").map(encodeURIComponent).join("/"));
+    });
+  } catch {}
+}
+init();
+</script>
+<script>
+let _toastT=null;
+function toast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t);}t.textContent=msg;t.style.display='block';clearTimeout(_toastT);_toastT=setTimeout(()=>{t.style.display='none';},3200);}
+</script>
+</body>
+</html>

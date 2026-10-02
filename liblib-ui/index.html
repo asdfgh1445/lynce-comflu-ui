@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lynce AI · 本地工作站</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    /* liblib 真实色板（沿用原版 index.html）*/
+    --bg: #0d0d0d; --panel: #141414; --panel2: #1b1b20; --chip: #2c2c2d;
+    --line: #26262b; --text: #ffffff; --muted: #919191; --muted2: #a8a8a8;
+    --blue1: #1aadff; --cta: linear-gradient(90deg, #1aadff, #3c95fa);
+  }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--text); font: 13px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ===== 顶栏（liblib 深色风）===== */
+  nav { flex: none; height: 52px; background: var(--bg); border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 16px; gap: 20px; }
+  nav .logo { display: flex; align-items: center; gap: 8px; }
+  nav .logo .mark { width: 26px; height: 26px; border-radius: 7px; background: var(--cta); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex: none; }
+  nav .logo .word { font-size: 15px; font-weight: 700; letter-spacing: .5px; white-space: nowrap; }
+  nav .logo .word em { font-style: normal; color: var(--muted); font-size: 11px; font-weight: 400; margin-left: 6px; }
+  nav .tabs { display: flex; gap: 2px; height: 100%; margin-left: 8px; }
+  nav .tabs .tab { display: flex; align-items: center; gap: 7px; padding: 0 16px; color: var(--muted2); text-decoration: none; font-size: 13px; position: relative; cursor: pointer; user-select: none; }
+  nav .tabs .tab svg { width: 15px; height: 15px; }
+  nav .tabs .tab.on { color: #fff; font-weight: 600; }
+  nav .tabs .tab.on::after { content: ""; position: absolute; left: 16px; right: 16px; bottom: 0; height: 2px; border-radius: 1px; background: var(--cta); }
+  nav .tabs .tab:hover { color: #fff; }
+  nav .stat { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  nav .dot { width: 7px; height: 7px; border-radius: 50%; background: #555; }
+  nav .dot.on { background: #2ecc71; box-shadow: 0 0 6px rgba(46,204,113,.6); }
+  nav .dot.busy { background: #f5a623; } nav .dot.off { background: #ff5c5c; }
+  .spin { width: 11px; height: 11px; border: 2px solid #3a3a42; border-top-color: var(--blue1); border-radius: 50%; animation: sp 1s linear infinite; display: inline-block; vertical-align: -1px; margin-right: 5px; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+
+  /* ===== 全屏标签页（pane 仅显隐，iframe 不重复加载）===== */
+  main { flex: 1; position: relative; min-height: 0; }
+  .pane { position: absolute; inset: 0; display: none; background: var(--bg); }
+  .pane.on { display: block; }
+  .pane iframe { width: 100%; height: 100%; border: 0; display: block; background: var(--panel); }
+  #frameComfy { background: #1b1b20; }
+
+  /* ComfyUI 未启动降级层 */
+  #comfyFallback { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: var(--bg); }
+  #comfyFallback.show { display: flex; }
+  .fallBox { text-align: center; color: #5c5c66; max-width: 440px; padding: 30px 34px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 14px 50px rgba(0,0,0,.5); }
+  .fallBox svg { width: 40px; height: 40px; opacity: .5; margin-bottom: 10px; }
+  .fallBox .msg { font-size: 13px; color: #d5d5dc; line-height: 1.8; }
+  .fallBox .sub { font-size: 11px; color: #5c5c66; margin-top: 6px; }
+  .fallBox .row { display: flex; gap: 9px; justify-content: center; margin-top: 18px; }
+  .fallBox a, .fallBox button { display: inline-flex; align-items: center; gap: 6px; background: var(--chip); border: 1px solid var(--line); color: #d5d5dc; border-radius: 8px; padding: 8px 16px; font-size: 12px; cursor: pointer; text-decoration: none; font-family: inherit; transition: .15s; }
+  .fallBox a:hover, .fallBox button:hover { color: #fff; border-color: #3a3a42; }
+  .fallBox a.main { background: var(--cta); border: none; color: #fff; font-weight: 700; }
+  .fallBox a.main:hover { filter: brightness(1.12); color: #fff; }
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo"><div class="mark">Ly</div><div class="word">Lynce AI<em>本地工作站</em></div></div>
+  <div class="tabs">
+    <a class="tab on" data-tab="img" title="简易生图模式（图片创作）">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      图像生成
+    </a>
+    <a class="tab" data-tab="gen" title="WebUI 三段式进阶界面（与 liblib 在线 WebUI 同布局）">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
+      Web UI
+    </a>
+    <a class="tab" data-tab="comfy" title="节点工作流（真 ComfyUI 前端，与 liblib 在线同源同款）">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M5 8.5v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3M12 13.5v2"/></svg>
+      ComfyUI 工作流
+    </a>
+  </div>
+  <div class="stat"><span class="dot off" id="dot"></span><span id="statusText">连接中</span></div>
+</nav>
+
+<main>
+  <!-- ① 图像生成：简易创作模式（默认打开） -->
+  <section class="pane on" id="pane-img">
+    <iframe id="frameImg" src="simple.html" title="图像生成"></iframe>
+  </section>
+
+  <!-- ② Web UI：三段式进阶界面（文生图/图生图） -->
+  <section class="pane" id="pane-gen">
+    <iframe id="frameGen" src="gen.html" title="Web UI"></iframe>
+  </section>
+
+  <!-- ③ ComfyUI 工作流：7821 端口真前端，首次切入时才探测、加载 -->
+  <section class="pane" id="pane-comfy">
+    <iframe id="frameComfy" title="ComfyUI 工作流"></iframe>
+    <div id="comfyFallback">
+      <div class="fallBox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M5 8.5v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3M12 13.5v2"/></svg>
+        <p class="msg">ComfyUI 后端未运行——启动 SwarmUI 后自动可用</p>
+        <p class="sub" id="comfyHint" hidden><span class="spin"></span>正在检测 http://localhost:7821 …</p>
+        <div class="row">
+          <a class="main" href="http://localhost:7821/" target="_blank" rel="noopener">在新窗口打开</a>
+          <button id="reprobeBtn" type="button">重新检测</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const API = location.origin;
+const COMFY_PORT = 7821;
+const COMFY_URL = "http://localhost:" + COMFY_PORT + "/";
+let SID = null;
+const $ = id => document.getElementById(id);
+
+async function api(path, payload, timeoutMs) {
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), timeoutMs || 30000);
+  try {
+    const r = await fetch(API + "/API/" + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload || {}), signal: ctl.signal });
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+function setDot(cls, text) { $("dot").className = "dot " + cls; $("statusText").textContent = text; }
+
+/* ===== 引擎状态（右上角，沿用原 pollStatus，轮询 GetCurrentStatus）===== */
+async function pollStatus() {
+  try {
+    const s = await api("GetCurrentStatus", SID ? { session_id: SID } : {}, 8000);
+    const st = s.backend_status || {};
+    if (!st.status) { setDot("off", "引擎未启动"); return; }
+    if (st.any_loading) setDot("busy", "引擎加载中");
+    else if (st.status === "running") setDot("on", "本地引擎就绪");
+    else setDot("on", "本地引擎已连接");
+  } catch { setDot("off", "引擎未启动"); }
+}
+
+/* ===== 标签切换：pane 只显隐，iframe 一经加载不重复载入 ===== */
+const panes = { img: $("pane-img"), gen: $("pane-gen"), comfy: $("pane-comfy") };
+const loaded = { img: true, gen: true, comfy: false };   // img/gen 的 src 写在 HTML 里，随入口页已加载
+let comfyProbing = false;
+
+function switchTab(name) {
+  document.querySelectorAll("nav .tabs .tab").forEach(t => t.classList.toggle("on", t.dataset.tab === name));
+  for (const k in panes) panes[k].classList.toggle("on", k === name);
+  if (name === "comfy" && !loaded.comfy) ensureComfy();
+}
+
+/* 跨源 iframe 读不到内容，用 no-cors fetch 探活：连不上会 reject */
+async function probeComfy() {
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 4000);
+    try { await fetch(COMFY_URL, { mode: "no-cors", cache: "no-store", signal: ctl.signal }); return true; }
+    finally { clearTimeout(t); }
+  } catch { return false; }
+}
+async function ensureComfy() {
+  if (loaded.comfy || comfyProbing) return;
+  comfyProbing = true;
+  $("comfyHint").hidden = false;
+  const ok = await probeComfy();
+  comfyProbing = false;
+  $("comfyHint").hidden = true;
+  if (ok) { $("comfyFallback").classList.remove("show"); $("frameComfy").src = COMFY_URL; loaded.comfy = true; }
+  else $("comfyFallback").classList.add("show");   // 未加载成功则不写 src，下次切入自动重试
+}
+
+document.querySelectorAll("nav .tabs .tab").forEach(t => t.onclick = () => switchTab(t.dataset.tab));
+$("reprobeBtn").onclick = ensureComfy;
+
+async function init() {
+  try { const s = await api("GetNewSession", {}); SID = s.session_id; } catch {}
+  pollStatus(); setInterval(pollStatus, 6000);
+}
+init();
+</script>
+</body>
+</html>
